@@ -1,0 +1,87 @@
+import threading
+import time
+import random
+
+N = 5            
+REFEICOES = 3    # quantas vezes cada um vai comer
+
+# Lock para cada garfo
+garfos = []
+for i in range(N):
+    garfos.append(threading.Lock())
+
+# quantas vezes cada filosofo comeu
+vezes_comeu = []
+for i in range(N):
+    vezes_comeu.append(0)
+
+
+def mostrar(p, mensagem):
+    print("Filosofo", p, "->", mensagem)
+
+
+def filosofo(p):
+    garfo_a = p            # garfo da esquerda
+    garfo_b = (p + 1) % N  # garfo da direita
+
+    # descobre qual e o menor e qual e o maior (IF / ELSE)
+    if garfo_a < garfo_b:
+        menor = garfo_a
+        maior = garfo_b
+    else:
+        menor = garfo_b
+        maior = garfo_a
+
+    for rodada in range(REFEICOES):
+        # PENSANDO
+        mostrar(p, "pensando")
+        time.sleep(random.uniform(0.1, 0.5))
+
+        # COM FOME
+        mostrar(p, "com fome")
+
+        # pega primeiro o garfo de menor indice
+        garfos[menor].acquire()
+        mostrar(p, "pegou o garfo " + str(menor))
+
+        # depois o de maior indice
+        garfos[maior].acquire()
+        mostrar(p, "pegou o garfo " + str(maior))
+
+        # COMENDO
+        vezes_comeu[p] = vezes_comeu[p] + 1
+        mostrar(p, "COMENDO (refeicao " + str(vezes_comeu[p]) + ")")
+        time.sleep(random.uniform(0.1, 0.5))
+
+        # devolve os garfos (ordem inversa)
+        garfos[maior].release()
+        garfos[menor].release()
+        mostrar(p, "largou os garfos " + str(maior) + " e " + str(menor))
+
+
+threads = []
+for p in range(N):
+    t = threading.Thread(target=filosofo, args=(p,))
+    threads.append(t)
+    t.start()
+
+# espera todos terminarem
+for t in threads:
+    t.join()
+
+print()
+print("Todos terminaram! Nenhum deadlock.")
+print("Quantas vezes cada filosofo comeu:")
+for p in range(N):
+    print("  Filosofo", p, ":", vezes_comeu[p], "vezes")
+
+# verificacao simples de justica
+todos_iguais = True
+for p in range(N):
+    if vezes_comeu[p] != REFEICOES:
+        todos_iguais = False
+
+if todos_iguais:
+    print("Justica OK: todos comeram o mesmo numero de vezes (sem inanicao).")
+else:
+    print("Atencao: alguem nao comeu o suficiente!")
