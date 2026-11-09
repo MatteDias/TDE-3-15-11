@@ -9,8 +9,12 @@ fazer um release().
 e "c:/Users/arthu/Projetos/TDE-3-15-11/Ativi 3/travada.py"          
 T1 adquiriu lockA                                                   
 T2 adquiriu lockB                                                   
-T1 tentando adquirir lockB
+
+
 T2 tentando adquirir lockA
+
+T1 tentando adquirir lockB
+
 T1 e T2 travaram
 
 
@@ -20,12 +24,22 @@ Nesse caso funciona pois o T1 conclui seu trabalho antes de tentar
 adquirir o lockB, logo o T2 pode adquirir o lockA.
 
 e "c:/Users/arthu/Projetos/TDE-3-15-11/Ativi 3/corrigida.py"        
-T1 adquiriu lockA                                                   
-T1 tentando adquirir lockB                                          
-T1 concluiu
-T2 adquiriu lockA
-T2 tentando adquirir lockB
-T2 concluiu
+T1 concluiu acquireA                                                
+
+T1 concluiu acquireB
+
+T1 concluiu releaseB
+
+T1 concluiu releaseA
+
+T2 concluiu acquireA
+
+T2 concluiu acquireB
+
+T2 concluiu releaseB
+
+T2 concluiu releaseA
+
 DEu boa
 
 
