@@ -1,12 +1,37 @@
 import _thread
+import time
+
+lockA, lockB = _thread.allocate_lock(), _thread.allocate_lock()
+
+def thread1():
+    lockA.acquire()
+    print("T1 concluiu acquireA")
+    time.sleep(0.05)
+    lockB.acquire()
+    print("T1 concluiu acquireB")
+    lockB.release()
+    print("T1 concluiu releaseB")
+    lockA.release()
+    print("T1 concluiu releaseA")
 
 
-# Pseudocódigo de referência (versão corrigida — hierarquia)
-# Regra global: sempre adquirir LOCK_A antes de LOCK_B,
-# em TODAS as threads.
-# Thread 1 e Thread 2:
-# adquirir(LOCK_A)
-# adquirir(LOCK_B)
-# // secao critica
-# liberar(LOCK_B)
-# liberar(LOCK_A)
+def thread2():
+    lockA.acquire()
+    print("T2 concluiu acquireA")
+    time.sleep(0.05)
+    lockB.acquire()
+    print("T2 concluiu acquireB")
+    lockB.release()
+    print("T2 concluiu releaseB")
+    lockA.release()
+    print("T2 concluiu releaseA")
+
+
+_thread.start_new_thread(thread1, ())
+_thread.start_new_thread(thread2, ())
+
+time.sleep(1)
+if lockA.locked() and lockB.locked():
+    print("T1 e T2 travaram")
+else:
+    print("DEu boa")

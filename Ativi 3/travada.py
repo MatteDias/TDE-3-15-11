@@ -1,21 +1,35 @@
 import _thread
+import time
 
-LOCK_A, LOCK_B = _thread.allocate_lock(), _thread.allocate_lock()
+lockA, lockB = _thread.allocate_lock(), _thread.allocate_lock()
 
 
-# Pseudocódigo de referência (versão que trava)
-# LOCK_A, LOCK_B = locks distintos
-# Thread 1:
-# adquirir(LOCK_A)
-# dormir(50ms) // aumenta a chance do deadlock
-# adquirir(LOCK_B)
-# imprimir "T1 concluiu"
-# liberar(LOCK_B)
-# liberar(LOCK_A)
-# Thread 2:
-# adquirir(LOCK_B)
-# dormir(50ms)
-# adquirir(LOCK_A)
-# imprimir "T2 concluiu"
-# liberar(LOCK_A)
-# liberar(LOCK_B)
+def thread1():
+    lockA.acquire()
+    print("T1 adquiriu lockA")
+    time.sleep(0.05)
+    print("T1 tentando adquirir lockB")
+    lockB.acquire()
+    print("T1 concluiu")
+    lockB.release()
+    lockA.release()
+
+
+def thread2():
+    lockB.acquire()
+    print("T2 adquiriu lockB")
+    time.sleep(0.05)
+    print("T2 tentando adquirir lockA")
+    lockA.acquire()
+    print("T2 concluiu")
+    lockA.release()
+    lockB.release()
+
+
+_thread.start_new_thread(thread1, ())
+_thread.start_new_thread(thread2, ())
+
+time.sleep(5)
+if lockA.locked() and lockB.locked():
+    print("T1 e T2 travaram")
+
