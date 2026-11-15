@@ -1,85 +1,71 @@
-# Como funciona o problema
+# Trabalho de Performance em Sistemas Ciberfisicos
 
-O problema consiste em cinco filósofos sentados em uma mesa redonda, onde existe um garfo entre cada um deles, totalizando cinco garfos.
-Cada filósofo precisa de dois garfos para conseguir comer: o da esquerda e o da direita. Como os garfos são compartilhados, dois filósofos vizinhos não conseguem comer ao mesmo tempo. No código, cada garfo é representado por um Lock, enquanto cada filósofo funciona como uma thread. Eles ficam alternando entre pensar, sentir fome e comer.
+Repositório do Grupo 6 com três atividades sobre concorrência, semáforos e deadlock.
 
-# 1. Versão falha
+## Integrantes
 
-Na primeira versão, todos os filósofos tentam pegar primeiro o garfo da esquerda. O problema acontece quando todos conseguem pegar esse primeiro garfo e tentam pegar o da direita.Como o garfo da direita já está sendo segurado pelo vizinho, todos ficam esperando alguém liberar o recurso. Só que ninguém consegue continuar para chegar na parte que libera os garfos.
+- Gastão Eduardo Santos Borges
+- Matteo Dias Silvestre
+- Otávio Augusto Brouwers Londero
+- Arthur de Oliveira Carvalho
 
-O resultado da execução foi:
+## Linguagem e execução
 
-```text
-Filosofo 0 -> pegou o garfo da esquerda (0)
-Filosofo 1 -> pegou o garfo da esquerda (1)
-Filosofo 2 -> pegou o garfo da esquerda (2)
-Filosofo 3 -> pegou o garfo da esquerda (3)
-Filosofo 4 -> pegou o garfo da esquerda (4)
+Os programas foram feitos em Python 3. Como Python é interpretado, não é preciso compilar para executar. Com o Python instalado, abra o terminal na pasta do repositório e rode o arquivo da atividade:
 
-Filosofo 0 -> esperando o garfo da direita (1)
-Filosofo 1 -> esperando o garfo da direita (2)
-
-DEADLOCK
+```bash
+python parte1-filosofos/jantar_falho.py
+python parte1-filosofos/jantar_final.py
+python parte2-semaforo/threadsSEMsemaforo.py
+python parte2-semaforo/threadsCOMsemaforo.py
+python parte3-deadlock/travada.py
+python parte3-deadlock/corrigida.py
 ```
 
-Foi colocado um time.sleep(1) entre a aquisição dos dois garfos para facilitar a demonstração. Sem essa pausa, o deadlock ainda poderia acontecer, mas dependeria da ordem em que as threads fossem executadas.
+No Windows, use `py -3` no lugar de `python` se necessário. Para conferir a sintaxe sem iniciar os programas, use `python -m py_compile` seguido dos caminhos dos arquivos `.py`.
 
-# 2. Condições de Coffman
+## Parte 1 — Jantar dos filósofos
 
-Para acontecer um deadlock, as quatro condições precisam existir ao mesmo tempo:
+### Como funciona
 
-- **Exclusão mútua:** cada garfo só pode ser utilizado por um filósofo.
-- **Manter e esperar:** o filósofo segura um garfo enquanto espera pelo outro.
-- **Não preempção:** não é possível retirar um garfo de alguém à força.
-- **Espera circular:** cada filósofo espera pelo garfo que está com o próximo, formando um ciclo.
+São cinco filósofos sentados em uma mesa e cinco garfos compartilhados. Para comer, cada um precisa pegar os garfos dos dois lados. No código, os filósofos são threads e cada garfo é um `Lock`.
 
-Quando as quatro condições estão presentes, por isso acontece o travamento.
+### Versão que pode travar
 
-# 3. Versão corrigida – Hierarquia de recursos
+Em `jantar_falho.py`, todos tentam pegar primeiro o garfo da esquerda. Se cada filósofo conseguir pegar esse garfo, todos ficam esperando pelo da direita, que está com o vizinho. Como ninguém chega à parte que libera os garfos, a execução pode entrar em deadlock.
 
-Na versão corrigida, foi definida uma ordem para pegar os garfos. Todos os filósofos precisam pegar primeiro o garfo de menor número e depois o de maior número.
+Uma pausa de um segundo entre as aquisições facilita observar a situação. Mesmo assim, o resultado depende da ordem em que as threads são executadas; por isso, uma rodada também pode terminar sem deadlock.
 
-A única diferença acontece com o filósofo 4, que precisa pegar primeiro o garfo 0 e depois o garfo 4, respeitando a mesma regra dos outros.
+### Versão corrigida
 
-Dessa forma, não acontece aquela situação em que todos seguram um garfo e ficam esperando pelo próximo.
+Em `jantar_final.py`, os filósofos pegam primeiro o garfo de menor número e depois o de maior número. Essa ordem quebra a espera circular. Cada filósofo come três vezes e o programa mostra a contagem no final.
 
-O resultado da execução foi:
+## Parte 2 — Contador e semáforo
 
-```text
-Filosofo 0 conseguiu pegar os dois garfos
-Filosofo 0 começou a comer
-Filosofo 0 liberou os garfos
+Os arquivos `threadsSEMsemaforo.py` e `threadsCOMsemaforo.py` comparam oito threads incrementando o mesmo contador. Cada thread faz 200.000 incrementos; o total esperado é 1.600.000.
 
-Filosofo 1 conseguiu pegar os dois garfos
-Filosofo 1 começou a comer
-Filosofo 1 liberou os garfos
+### Sem semáforo
 
-...
+Em `threadsSEMsemaforo.py`, cada thread lê o valor do contador, cede a execução e grava o valor incrementado. Outra thread pode alterar o contador nesse intervalo, fazendo alguns incrementos se perderem.
 
-Todos os filosofos terminaram suas refeicoes.
-```
+### Com semáforo
 
-# 4. Por que a solução funciona?
+Em `threadsCOMsemaforo.py`, o semáforo deixa apenas uma thread por vez acessar o contador. Assim, as atualizações não se sobrepõem. Os dois programas mostram o valor final e o tempo gasto; esse tempo pode mudar de uma máquina para outra.
 
-A solução funciona porque foi criada uma ordem para adquirir os recursos. Assim, nenhum filósofo consegue formar um ciclo de espera com os outros.
-Na versão corrigida, todos precisam respeitar a ordem dos garfos, sempre pegando primeiro o de menor número e depois o de maior número.
-Com isso, a condição de **espera circular** é quebrada, evitando o deadlock.
+## Parte 3 — Deadlock
 
-# 5. Progresso e justiça
+### Versão travada
 
-Na versão corrigida, os filósofos conseguem continuar comendo e liberando os garfos, sem deixar o sistema travado.
-Também foi feita uma verificação no final para conferir quantas vezes cada filósofo conseguiu comer.
+Em `travada.py`, a primeira thread pega o lock A e tenta pegar B. A segunda pega B e tenta pegar A. Cada uma fica esperando pelo lock que está com a outra, formando uma espera circular.
 
-Resultado:
+### Versão corrigida
 
-```text
-Filosofo 0: 3 vezes
-Filosofo 1: 3 vezes
-Filosofo 2: 3 vezes
-Filosofo 3: 3 vezes
-Filosofo 4: 3 vezes
+Em `corrigida.py`, as duas threads seguem a mesma ordem e tentam pegar A antes de B. Uma pode esperar pela outra, mas não se forma o ciclo de espera. Os registros dessa atividade estão em [`parte3-deadlock/logs.md`](parte3-deadlock/logs.md).
 
-Justica OK: todos comeram o mesmo numero de vezes.
-```
+## Saídas dos programas
 
-Isso mostra que, durante a simulação, todos conseguiram participar igualmente.
+As mensagens aparecem no terminal durante a execução. Na parte 1, elas mostram o estado dos filósofos e o resultado da simulação. Na parte 2, mostram o contador final, o valor esperado e o tempo. Na parte 3, o arquivo de logs reúne os registros das versões travada e corrigida. A ordem das mensagens concorrentes pode variar entre execuções.
+
+## Vídeo
+
+Link da apresentação no YouTube: https://youtu.be/AVx92nXX0EE
